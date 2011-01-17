@@ -1,0 +1,11 @@
+diff -Nur SDK.UBNT.v5.2.orig/openwrt/package/ubnt-web/Makefile SDK.UBNT.v5.2/openwrt/package/ubnt-web/Makefile
+--- SDK.UBNT.v5.2.orig/openwrt/package/ubnt-web/Makefile	2010-05-14 12:11:10.000000000 +0200
++++ SDK.UBNT.v5.2/openwrt/package/ubnt-web/Makefile	2010-07-01 06:32:00.000000000 +0200
+@@ -24,6 +24,7 @@
+ define Build/Prepare
+ 	mkdir -p $(PKG_BUILD_DIR)
+ 	tar -C src/ --exclude .svn -cf - . | tar -C $(PKG_BUILD_DIR) -xvf -
++	sed -i s/?OLSR_VERSION?/`grep "PKG_VERSION:=" ../olsrd/Makefile | sed "s/PKG_VERSION:=//"`/ $(PKG_BUILD_DIR)/nocookies.html
+ endef
+ 
+ define Build/Configure

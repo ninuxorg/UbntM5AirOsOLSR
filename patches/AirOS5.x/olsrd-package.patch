@@ -1,0 +1,60 @@
+diff -Nur SDK.UBNT.v5.2.orig//openwrt/package/ubnt-base-files/files/init SDK.UBNT.v5.2//openwrt/package/ubnt-base-files/files/init
+--- SDK.UBNT.v5.2.orig//openwrt/package/ubnt-base-files/files/init	2010-05-14 12:11:06.000000000 +0200
++++ SDK.UBNT.v5.2//openwrt/package/ubnt-base-files/files/init	2010-06-10 16:47:54.000000000 +0200
+@@ -139,6 +139,14 @@
+ 	/sbin/ubntconf
+ fi
+ 
++# add olsrd to init
++grep -q "olsrd.status=enabled" $CFG_SYSTEM
++if [ $? -eq 0 ] && [ -x /usr/sbin/olsrd ]; then
++	cp -f /usr/etc/init.d/olsrd /etc/sysinit/olsrd.conf
++	echo "null::respawn:/usr/sbin/olsrd -nofork" >> /etc/inittab
++	echo "olsrd" >> /etc/startup.list
++fi
++
+ echo "...running /sbin/init"
+ exec /sbin/init
+ 
+diff -Nur SDK.UBNT.v5.2.orig//openwrt/package/ubnt-base-files/files/usr/etc/rc.d/rc.softrestart SDK.UBNT.v5.2//openwrt/package/ubnt-base-files/files/usr/etc/rc.d/rc.softrestart
+--- SDK.UBNT.v5.2.orig//openwrt/package/ubnt-base-files/files/usr/etc/rc.d/rc.softrestart	2010-05-14 12:11:06.000000000 +0200
++++ SDK.UBNT.v5.2//openwrt/package/ubnt-base-files/files/usr/etc/rc.d/rc.softrestart	2010-06-10 16:50:37.000000000 +0200
+@@ -61,6 +61,14 @@
+ 	/sbin/ubntconf
+ fi
+ 
++# add olsrd to init
++grep -q "olsrd.status=enabled" $CFG_SYSTEM
++if [ $? -eq 0 ] && [ -x /usr/sbin/olsrd ]; then
++	cp -f /usr/etc/init.d/olsrd /etc/sysinit/olsrd.conf
++	echo "null::respawn:/usr/sbin/olsrd -nofork" >> /etc/inittab
++	echo "olsrd" >> /etc/startup.list
++fi
++
+ TEST_LOCK_FILE=/var/run/testmode
+ if [ -e $TEST_LOCK_FILE ]; then
+ 	/usr/bin/chmod 644 $TEST_LOCK_FILE
+diff -Nur SDK.UBNT.v5.2.orig//openwrt/.config SDK.UBNT.v5.2//openwrt/.config
+--- SDK.UBNT.v5.2.orig//openwrt/.config	2010-05-18 11:03:40.000000000 +0200
++++ SDK.UBNT.v5.2//openwrt/.config	2010-06-07 17:33:39.000000000 +0200
+@@ -995,6 +995,20 @@
+ # CONFIG_PACKAGE_ipset is not set
+ CONFIG_PACKAGE_mcagent=y
+ # CONFIG_PACKAGE_mcagent-tests is not set
++CONFIG_PACKAGE_olsrd=y
++CONFIG_PACKAGE_olsrd-mod-arprefresh=y
++CONFIG_PACKAGE_olsrd-mod-bmf=y
++CONFIG_PACKAGE_olsrd-mod-dot-draw=y
++CONFIG_PACKAGE_olsrd-mod-dyn-gw=y
++CONFIG_PACKAGE_olsrd-mod-dyn-gw-plain=y
++CONFIG_PACKAGE_olsrd-mod-httpinfo=y
++CONFIG_PACKAGE_olsrd-mod-mdns=y
++CONFIG_PACKAGE_olsrd-mod-nameservice=y
++CONFIG_PACKAGE_olsrd-mod-p2pd=y
++CONFIG_PACKAGE_olsrd-mod-quagga=y
++CONFIG_PACKAGE_olsrd-mod-secure=y
++CONFIG_PACKAGE_olsrd-mod-txtinfo=y
++CONFIG_PACKAGE_olsrd-mod-watchdog=y
+ CONFIG_PACKAGE_ppp=y
+ CONFIG_PACKAGE_chat=y
+ # CONFIG_PACKAGE_ppp-mod-pppoa is not set

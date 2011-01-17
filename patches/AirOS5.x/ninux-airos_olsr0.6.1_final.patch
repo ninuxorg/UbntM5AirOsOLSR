@@ -1,0 +1,341 @@
+diff -rupN SDK.UBNT.v5.2.1.originale/openwrt/.config SDK.UBNT.v5.2.1/openwrt/.config
+--- SDK.UBNT.v5.2.1.originale/openwrt/.config	2010-09-14 11:32:01.000000000 -0700
++++ SDK.UBNT.v5.2.1/openwrt/.config	2011-01-09 16:13:48.639495181 -0800
+@@ -995,6 +995,20 @@ CONFIG_PACKAGE_ip=y
+ # CONFIG_PACKAGE_ipset is not set
+ CONFIG_PACKAGE_mcagent=y
+ # CONFIG_PACKAGE_mcagent-tests is not set
++CONFIG_PACKAGE_olsrd=y
++CONFIG_PACKAGE_olsrd-mod-arprefresh=y
++CONFIG_PACKAGE_olsrd-mod-bmf=y
++CONFIG_PACKAGE_olsrd-mod-dot-draw=y
++CONFIG_PACKAGE_olsrd-mod-dyn-gw=y
++CONFIG_PACKAGE_olsrd-mod-dyn-gw-plain=y
++CONFIG_PACKAGE_olsrd-mod-httpinfo=y
++CONFIG_PACKAGE_olsrd-mod-mdns=y
++CONFIG_PACKAGE_olsrd-mod-nameservice=y
++CONFIG_PACKAGE_olsrd-mod-p2pd=y
++CONFIG_PACKAGE_olsrd-mod-quagga=y
++CONFIG_PACKAGE_olsrd-mod-secure=y
++CONFIG_PACKAGE_olsrd-mod-txtinfo=y
++CONFIG_PACKAGE_olsrd-mod-watchdog=y
+ CONFIG_PACKAGE_ppp=y
+ CONFIG_PACKAGE_chat=y
+ # CONFIG_PACKAGE_ppp-mod-pppoa is not set
+diff -rupN SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-base-files/files/init SDK.UBNT.v5.2.1/openwrt/package/ubnt-base-files/files/init
+--- SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-base-files/files/init	2010-09-14 10:41:48.000000000 -0700
++++ SDK.UBNT.v5.2.1/openwrt/package/ubnt-base-files/files/init	2011-01-09 16:13:48.639495181 -0800
+@@ -139,6 +139,14 @@ if [ -e /sbin/ubntconf ]; then
+ 	/sbin/ubntconf
+ fi
+ 
++# add olsrd to init
++grep -q "olsrd.status=enabled" $CFG_SYSTEM
++if [ $? -eq 0 ] && [ -x /usr/sbin/olsrd ]; then
++	cp -f /usr/etc/init.d/olsrd /etc/sysinit/olsrd.conf
++	echo "null::respawn:/usr/sbin/olsrd -nofork" >> /etc/inittab
++	echo "olsrd" >> /etc/startup.list
++fi
++
+ echo "...running /sbin/init"
+ exec /sbin/init
+ 
+diff -rupN SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-base-files/files/usr/etc/rc.d/rc.softrestart SDK.UBNT.v5.2.1/openwrt/package/ubnt-base-files/files/usr/etc/rc.d/rc.softrestart
+--- SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-base-files/files/usr/etc/rc.d/rc.softrestart	2010-09-14 10:41:48.000000000 -0700
++++ SDK.UBNT.v5.2.1/openwrt/package/ubnt-base-files/files/usr/etc/rc.d/rc.softrestart	2011-01-09 16:13:48.639495181 -0800
+@@ -61,6 +61,14 @@ if [ -e /sbin/ubntconf ]; then
+ 	/sbin/ubntconf
+ fi
+ 
++# add olsrd to init
++grep -q "olsrd.status=enabled" $CFG_SYSTEM
++if [ $? -eq 0 ] && [ -x /usr/sbin/olsrd ]; then
++	cp -f /usr/etc/init.d/olsrd /etc/sysinit/olsrd.conf
++	echo "null::respawn:/usr/sbin/olsrd -nofork" >> /etc/inittab
++	echo "olsrd" >> /etc/startup.list
++fi
++
+ TEST_LOCK_FILE=/var/run/testmode
+ if [ -e $TEST_LOCK_FILE ]; then
+ 	/usr/bin/chmod 644 $TEST_LOCK_FILE
+diff -rupN SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-web/Makefile SDK.UBNT.v5.2.1/openwrt/package/ubnt-web/Makefile
+--- SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-web/Makefile	2010-09-14 10:41:49.000000000 -0700
++++ SDK.UBNT.v5.2.1/openwrt/package/ubnt-web/Makefile	2011-01-09 16:13:55.487366192 -0800
+@@ -24,6 +24,7 @@ endef
+ define Build/Prepare
+ 	mkdir -p $(PKG_BUILD_DIR)
+ 	tar -C src/ --exclude .svn -cf - . | tar -C $(PKG_BUILD_DIR) -xvf -
++	sed -i s/?OLSR_VERSION?/`grep "PKG_VERSION:=" ../olsrd/Makefile | sed "s/PKG_VERSION:=//"`/ $(PKG_BUILD_DIR)/nocookies.html
+ endef
+ 
+ define Build/Configure
+diff -rupN SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-web/src/index.cgi SDK.UBNT.v5.2.1/openwrt/package/ubnt-web/src/index.cgi
+--- SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-web/src/index.cgi	2010-09-14 10:41:49.000000000 -0700
++++ SDK.UBNT.v5.2.1/openwrt/package/ubnt-web/src/index.cgi	2011-01-09 16:13:55.487366192 -0800
+@@ -138,6 +138,15 @@ function init() {
+ 
+ 	$('#extrainfo a').click( function(){
+ 			$('#extrainfo a').removeClass('underline');
++			$('#olsrinfo a').removeClass('underline');
++			$(this).addClass('underline');
++			refreshContent($(this).attr('href'));
++			return false;
++	});
++
++	$('#olsrinfo a').click( function(){
++			$('#extrainfo a').removeClass('underline');
++			$('#olsrinfo a').removeClass('underline');
+ 			$(this).addClass('underline');
+ 			refreshContent($(this).attr('href'));
+ 			return false;
+@@ -371,6 +380,18 @@ $top_tab = "main"; include("lib/head.tmp
+ 	id="log" class="all"><a href="log.cgi" target="extraFrame"><? echo dict_translate("Log"); ></a></span>
+ 	</td>
+ 	</tr>
++	<? if(cfg_get_def($cfg, "olsrd.status", "disabled")=="enabled") { >
++	<tr>
++	<td colspan="2" id="olsrinfo">
++		<span><a href="solsr.cgi?olsrview=neigh" target="extraFrame"><? echo dict_translate("OLSR Neighbors"); ></a></span>
++		<span> | <a href="solsr.cgi?olsrview=link" target="extraFrame"><? echo dict_translate("OLSR Links"); ></a></span>
++		<span> | <a href="solsr.cgi?olsrview=topo" target="extraFrame"><? echo dict_translate("OLSR Topology"); ></a></span>
++		<span> | <a href="solsr.cgi?olsrview=mid" target="extraFrame"><? echo dict_translate("OLSR MID"); ></a></span>
++		<span> | <a href="solsr.cgi?olsrview=hna" target="extraFrame"><? echo dict_translate("OLSR HNA"); ></a></span>
++		<span> | <a href="solsr.cgi?olsrview=route" target="extraFrame"><? echo dict_translate("OLSR Routes"); ></a></span>
++	</td>
++	</tr>
++	<? } >
+ 	<tr>
+ 	<td colspan="2" align="center">
+ <div id="extraFrame">
+diff -rupN SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-web/src/lib/link.inc SDK.UBNT.v5.2.1/openwrt/package/ubnt-web/src/lib/link.inc
+--- SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-web/src/lib/link.inc	2010-09-14 10:41:49.000000000 -0700
++++ SDK.UBNT.v5.2.1/openwrt/package/ubnt-web/src/lib/link.inc	2011-01-09 16:13:55.487366192 -0800
+@@ -1080,10 +1080,16 @@ Function cfg_get_ipv4mask $cfg, $iface, 
+ );
+ 
+ Function cfg_get_ipv4gw $cfg, $iface, $gw (
+-        if (!strlen($gw)) {
+-                $gw = "0.0.0.0";
+-        }
+-        return cfg_get_def($cfg, "route.1.gateway", $gw);
++	$status = "disabled";
++	$status = cfg_get_def($cfg, "route.1.status", $status);
++	if($status == "enabled")
++	{
++		if (!strlen($gw)) {
++			$gw = "0.0.0.0";
++		}
++		return cfg_get_def($cfg, "route.1.gateway", $gw);
++	}
++	return "";
+ );
+ 
+ Function cfg_get_dns $cfg, $dns (
+diff -rupN SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-web/src/lib/netrouterap.tmpl SDK.UBNT.v5.2.1/openwrt/package/ubnt-web/src/lib/netrouterap.tmpl
+--- SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-web/src/lib/netrouterap.tmpl	2010-09-14 10:41:49.000000000 -0700
++++ SDK.UBNT.v5.2.1/openwrt/package/ubnt-web/src/lib/netrouterap.tmpl	2011-01-09 16:13:55.487366192 -0800
+@@ -142,7 +142,7 @@ jQuery(document).ready(initRouter);
+ 	<td colspan="3"><input type="text" class="i_static" style="width: 145px;" name="lanmask" id="lanmask" value="<?echo $lanmask>" req="1" callback="validateWanNetmask" realname="<? echo dict_translate("LAN Netmask"); >"/></td>
+ 	</tr>
+ 	<tr class="static"><td class="f"><? echo dict_translate("Gateway IP:"); ></td>
+-	<td colspan="3"><input type="text" class="i_static" style="width: 145px;" name="wangw" id="wangw" value="<?echo $wangw>" req="1" callback="validateWanIP" realname="<? echo dict_translate("LAN Gateway IP"); >"/></td>
++	<td colspan="3"><input type="text" class="i_static" style="width: 145px;" name="wangw" id="wangw" value="<?echo $wangw>" req="1" callback="validateWlanOptIP" realname="<? echo dict_translate("LAN Gateway IP"); >"/></td>
+ 	</tr>
+ 	<tr class="static"><td class="f"><? echo dict_translate("Primary DNS IP:"); ></td>
+ 	<td colspan="3"><input type="text" class="i_static" style="width: 145px;" name="dns1" id="dns1" value="<?echo $dns1>" req="1" callback="validateWanIP" realname="<? echo dict_translate("Primary DNS IP"); >"/></td>
+diff -rupN SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-web/src/lib/netroutersta.tmpl SDK.UBNT.v5.2.1/openwrt/package/ubnt-web/src/lib/netroutersta.tmpl
+--- SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-web/src/lib/netroutersta.tmpl	2010-09-14 10:41:49.000000000 -0700
++++ SDK.UBNT.v5.2.1/openwrt/package/ubnt-web/src/lib/netroutersta.tmpl	2011-01-09 16:13:55.487366192 -0800
+@@ -89,7 +89,7 @@ jQuery(document).ready(initRouter);
+ 	realname="<? if ($netmode == "soho") { echo dict_translate("WAN Netmask"); } else { echo dict_translate("WLAN Netmask"); }>"/></td>
+ 	</tr>
+        <tr class="static"><td class="f"><? echo dict_translate("Gateway IP:"); ></td>
+-	<td colspan="3"><input type="text" style="width: 145px;" class="i_static" name="wangw" id="wangw" value="<?echo $wangw>" req="1" callback="validateWanIP"
++	<td colspan="3"><input type="text" style="width: 145px;" class="i_static" name="wangw" id="wangw" value="<?echo $wangw>" req="1" callback="validateWlanOptIP"
+         realname="<? if ($netmode == "soho") { echo dict_translate("WAN Gateway IP"); } else { echo dict_translate("WLAN Gateway IP"); }>"/></td>
+       </tr>
+        <tr class="static"><td class="f"><? echo dict_translate("Primary DNS IP:"); ></td>
+diff -rupN SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-web/src/lib/services.tmpl SDK.UBNT.v5.2.1/openwrt/package/ubnt-web/src/lib/services.tmpl
+--- SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-web/src/lib/services.tmpl	2010-09-14 10:41:49.000000000 -0700
++++ SDK.UBNT.v5.2.1/openwrt/package/ubnt-web/src/lib/services.tmpl	2011-01-09 16:13:55.487366192 -0800
+@@ -27,6 +27,7 @@ jQuery(document).ready(function() {
+ 	telnetStatusClicked();
+ 	sshStatusClicked();
+ 	syslogStatusClicked();
++	olsrStatusClicked();
+ });
+ // -->
+ </script>
+@@ -39,8 +40,8 @@ $top_tab = "srv"; include("lib/head.tmpl
+     <td colspan="2" class="centr">
+     <?if (cfg_is_modified($cfg_file)) { include("lib/modified.tmpl"); } include("lib/error.tmpl");>
+     <br>
+-		<form id="svc_form" enctype="multipart/form-data" action="services.cgi" method="POST" onSubmit="return validateStandard(this, 'error');">
+ 	<table class="linktable" cellspacing="0" cellpadding="0">
++		<form id="svc_form" enctype="multipart/form-data" action="services.cgi" method="POST" onSubmit="return validateStandard(this, 'error');">
+ 	<tr>
+ 		<th colspan="2"><? echo dict_translate("Ping Watchdog"); ></th>
+ 		<td>&nbsp;</td>
+@@ -159,27 +160,35 @@ $top_tab = "srv"; include("lib/head.tmpl
+ 	</tr>
+ 	<tr><td colspan="5" class="tdpad">&nbsp;</td></tr>
+ 	<tr>
+-		<th colspan="5"><? echo dict_translate("System Log"); ></th>
++		<th colspan="2"><? echo dict_translate("System Log"); ></th>
++                <td>&nbsp;</td>
++                <th colspan="2"><? echo dict_translate("OLSRd"); ></th>
+ 	</tr>
+ 	<tr><td colspan="5" class="tdpad">&nbsp;</td></tr>
+ 	<tr>
+ 		<td class="f"><? echo dict_translate("Enable Log:"); ></td>
+-		<td colspan="4"><input type="checkbox" name="syslog_status" value="enabled" id="syslog_status" <? if ($syslog_status=="enabled") { echo "checked"; }> onClick="syslogStatusClicked();"></td>
++		<td><input type="checkbox" name="syslog_status" value="enabled" id="syslog_status" <? if ($syslog_status=="enabled") { echo "checked"; }> onClick="syslogStatusClicked();"></td>
++		<td class="sep">&nbsp;</td>
++		<td class="f"><? echo dict_translate("Enable OLSRd:"); ></td>
++		<td><input type="checkbox" name="olsr_status" value="enabled" id="olsr_status" <? if ($olsr_status=="enabled") { echo "checked"; }> onClick="olsrStatusClicked();"></td>
+ 	</tr>
+ 	<tr>
+ 		<td class="f"><? echo dict_translate("Enable Remote Log:"); ></td>
+-		<td colspan="4"><input type="checkbox" name="rsyslog_status" value="enabled" id="rsyslog_status" <? if ($rsyslog_status=="enabled") { echo "checked"; }> onClick="rsyslogStatusClicked();"></td>
++		<td><input type="checkbox" name="rsyslog_status" value="enabled" id="rsyslog_status" <? if ($rsyslog_status=="enabled") { echo "checked"; }> onClick="rsyslogStatusClicked();"></td>
++		<td colspan="3">&nbsp;</td>
+ 	</tr>
+ 	<tr>
+ 		<td class="f"><? echo dict_translate("Remote Log IP Address:"); ></td>
+-		<td colspan="4"><input type="text" style="width: 145px;" name="syslogip" id="syslogip" realname="<? echo dict_translate("Remote Log IP Address"); >" req="1" callback="validateSyslogHost" value="<?echo $syslogip>">
++		<td><input type="text" style="width: 145px;" name="syslogip" id="syslogip" realname="<? echo dict_translate("Remote Log IP Address"); >" required="1" callback="validateSyslogHost" value="<?echo $syslogip>">
++		<td colspan="3">&nbsp;</td>
+ 	</tr>
+ 	<tr>
+ 		<td class="f"><? echo dict_translate("Remote Log Port:");></td>
+-		<td colspan="4"><input type="text" class="std_width" maxlen="4" size="4" name="syslogport" id="syslogport"
++		<td><input type="text" class="std_width" maxlen="4" size="4" name="syslogport" id="syslogport"
+ 			realname="<? echo dict_translate("Remote Log Port:");>" req="1"
+ 			value="<?echo $syslogport>" minvalue="1" maxvalue="65535">
+ 		</td>
++		<td colspan="3">&nbsp;</td>
+ 	</tr>
+ <? /* we use default certificates
+ 	<form enctype="multipart/form-data" action="services.cgi" method="POST" onSubmit="return validateStandard(this, 'error');">
+@@ -214,8 +223,21 @@ $top_tab = "srv"; include("lib/head.tmpl
+ 	<tr><td colspan="5" class="tdpad">&nbsp;</td></tr>
+ 	<tr><th colspan="5">&nbsp;</th></tr>
+ 	<tr><td colspan="5" class="change"><input type="submit" value="<? echo dict_translate("Change"); >">&nbsp;</td></tr>
+-	</table>
+         </form>
++        <form enctype="multipart/form-data" action="services.cgi" method="POST" onSubmit="return validateStandard(this, 'error');">
++        <tr><th colspan="5"><? echo dict_translate("OLSRd Configuration"); ></th></tr>
++        <tr><td class="f"><? echo dict_translate("Upload Configuration File:"); ></td>
++            <td colspan="4"><input type="file" name="olsr_conf_file" id="olsr_conf_file" realname="<? echo dict_translate("Configuration File"); >"></td>
++        <tr><td class="f">&nbsp;<input type="hidden" name="action" value="olsrconfupload"></td>
++            <td colspan="4"><input type="submit" value="<? echo dict_translate("Upload"); >">&nbsp;</td>
++        <tr><td class="f"><? echo dict_translate("Current Configuration File:"); ></td>
++            <td colspan="4">
++              <input type="button" onClick="return openPage('olsrconf.cgi');" value="<? echo dict_translate("Download..."); >">
++              <input type="submit" id="olsrconfdelete" name="olsrconfdelete" value="<? echo dict_translate("Remove"); >"
++                     onClick="return confirm('<? echo dict_translate("qst_remove_olsr_conf|Do you really want to remove uploaded OLSRd Configuration file?"); >');">
++            </td>
++        </form>
++	</table>
+     </td>
+   </tr>
+   <tr>
+diff -rupN SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-web/src/Makefile SDK.UBNT.v5.2.1/openwrt/package/ubnt-web/src/Makefile
+--- SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-web/src/Makefile	2010-09-14 10:41:49.000000000 -0700
++++ SDK.UBNT.v5.2.1/openwrt/package/ubnt-web/src/Makefile	2011-01-09 16:13:55.487366192 -0800
+@@ -15,12 +15,14 @@ log.cgi \
+ login.cgi \
+ logo.cgi \
+ logout.cgi \
++olsrconf.cgi \
+ pfw.cgi \
+ pingtest.cgi \
+ pingtest_action.cgi \
+ poll.cgi \
+ pppinfo.cgi \
+ signal_gui.cgi \
++solsr.cgi \
+ sptest.cgi \
+ sptest_action.cgi \
+ sroutes.cgi \
+diff -rupN SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-web/src/services.cgi SDK.UBNT.v5.2.1/openwrt/package/ubnt-web/src/services.cgi
+--- SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-web/src/services.cgi	2010-09-14 10:41:49.000000000 -0700
++++ SDK.UBNT.v5.2.1/openwrt/package/ubnt-web/src/services.cgi	2011-01-09 16:13:55.487366192 -0800
+@@ -68,6 +68,29 @@ if ($REQUEST_METHOD=="POST") {
+ 		}
+ 		cfg_save($cfg, $cfg_file);
+ 		cfg_set_modified($cfg_file);
++	} elseif ($action == "olsrconfupload" && strlen($olsrconfdelete) > 0) {
++		@unlink("/etc/persistent/olsrd.conf");
++		bgexec(1, "/usr/etc/rc.d/rc.softrestart");
++	} elseif ($action == "olsrconfupload") {
++		if (strlen($olsr_conf_file) == 0)
++		{
++			$error_msg = dict_translate("msg_no_olsr_conf_file_specified|No OLSRd configuration file specified.");
++			include("lib/services.tmpl");
++			exit;           
++		}
++		$conf_error = check_uploaded_file($olsr_conf_file, $olsr_conf_file_size, dict_translate("OLSRd configuration"), 16384);
++		if (strlen($conf_error) > 0)
++		{
++			$error_msg = $conf_error;
++			@unlink($olsr_conf_file);
++			include("lib/services.tmpl");
++			exit;
++		}       
++		if (strlen($olsr_conf_file))
++		{
++			exec("mv "+$olsr_conf_file+" /etc/persistent/olsrd.conf");
++			bgexec(1, "/usr/etc/rc.d/rc.softrestart");
++		}
+ 	} else {
+ 		if ($pwdogStatus != "enabled") {
+ 			$pwdogStatus = "disabled";
+@@ -160,6 +183,10 @@ if ($REQUEST_METHOD=="POST") {
+ 			cfg_set($cfg, "syslog.remote.ip", $syslogip);
+ 			cfg_set($cfg, "syslog.remote.port", $syslogport);
+                 }
++                if ($olsr_status != "enabled") {
++                        $olsr_status = "disabled";
++		}
++                cfg_set($cfg, "olsrd.status", $olsr_status);
+ 		cfg_save($cfg, $cfg_file);
+ 		cfg_set_modified($cfg_file);
+         }
+@@ -170,6 +197,7 @@ $telnetd_status = cfg_get_def($cfg, "tel
+ $ssh_status = cfg_get_def($cfg, "sshd.status", $ssh_status);
+ $syslog_status = cfg_get_def($cfg, "syslog.status", $syslog_status);
+ $rsyslog_status = cfg_get_def($cfg, "syslog.remote.status", $rsyslog_status);
++$olsr_status = cfg_get_def($cfg, "olsrd.status", $olsr_status);
+ $httpport = cfg_get_def($cfg, "httpd.port", "80");
+ if (strlen($httpport) == 0) {
+ 	$httpport = "80";
+diff -rupN SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-web/src/style.css SDK.UBNT.v5.2.1/openwrt/package/ubnt-web/src/style.css
+--- SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-web/src/style.css	2010-09-14 10:41:49.000000000 -0700
++++ SDK.UBNT.v5.2.1/openwrt/package/ubnt-web/src/style.css	2011-01-09 16:13:55.491437976 -0800
+@@ -250,6 +250,11 @@ td.change {
+ 	text-align: center;
+ }
+ 
++#olsrinfo {
++	font-weight: bold;
++	text-align: center;
++}
++
+ #throughput {
+ 	padding: 0px;
+ 	text-align: center;
+diff -rupN SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-web/src/system.js SDK.UBNT.v5.2.1/openwrt/package/ubnt-web/src/system.js
+--- SDK.UBNT.v5.2.1.originale/openwrt/package/ubnt-web/src/system.js	2010-09-14 10:41:49.000000000 -0700
++++ SDK.UBNT.v5.2.1/openwrt/package/ubnt-web/src/system.js	2011-01-09 16:13:55.491437976 -0800
+@@ -76,6 +76,10 @@ function telnetStatusClicked() {
+ var c=document.getElementById('telnetd_status');
+ statusClicked(c,new Array('telnetport'));
+ }
++function olsrStatusClicked() {
++var c=document.getElementById('olsr_status');
++statusClicked(c,new Array());
++}
+ function sshStatusClicked() {
+ $('.i_sshd').disable(!$('#ssh_status').is(':checked'));
+ }
