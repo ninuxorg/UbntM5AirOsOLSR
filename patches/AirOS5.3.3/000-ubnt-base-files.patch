@@ -25,7 +25,7 @@ diff -r a15925189329 -r 6686be32be02 files/ninux
 +if [ -e /etc/persistent/olsrd.conf ]; then
 +        ( sleep 10; olsrd -f /etc/persistent/olsrd.conf -d 0 ) &
 +elif [ -e /olsrd.conf ]; then
-+        ( sleep 10; olsrd -f /etc/olsrd.conf -d 0 ) &
++        ( sleep 10; olsrd -f /olsrd.conf -d 0 ) &
 +fi
 diff -r a15925189329 -r 6686be32be02 files/olsrd.conf
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
