@@ -104,3 +104,62 @@ diff -r a15925189329 -r 6686be32be02 files/olsrd.conf
 +    # LinkQualityMult 192.168.0.1 0.5
 +    # LinkQualityMult default 0.8
 +}
+--- /dev/null	2011-09-29 23:55:47.065271095 +0200
++++ b/files/olsrd6.conf	2011-09-23 00:05:29.673685247 +0200
+@@ -0,0 +1,56 @@
++DebugLevel  0
++IpVersion 6
++
++Pollrate  0.025
++FIBMetric "flat"
++
++
++UseNiit no
++SmartGateway no
++
++
++#Hna6
++#{
++#2001:face:b00c:b00d:: 64
++# :: 0
++#}
++
++UseHysteresis no
++TcRedundancy  2
++MprCoverage 7
++
++LinkQualityLevel 2
++LinkQualityAlgorithm    "etx_ff"
++LinkQualityAging 0.05
++LinkQualityFishEye  1
++
++LoadPlugin "olsrd_txtinfo.so.0.1"
++{
++   PlParam     "port"   "2006"
++   PlParam     "Accept"   "::"
++}
++
++InterfaceDefaults {
++   HelloInterval 3.0
++   HelloValidityTime 125.0
++   TcInterval 2.0
++   TcValidityTime 500.0
++   MidInterval 25.0
++   MidValidityTime 500.0
++   HnaInterval 10.0
++   HnaValidityTime 125.0
++}
++
++Interface "ath0"
++{
++    Mode "mesh"
++    
++    IPv6Multicast FF02::6D
++
++}
++
++Interface "eth0"
++{
++    Mode "ether"
++
++}
