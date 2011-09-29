@@ -21,17 +21,19 @@ diff -r a15925189329 -r 6686be32be02 files/init
 diff -r a15925189329 -r 6686be32be02 files/ninux
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
 +++ b/files/ninux	Tue Aug 30 23:06:06 2011 +0200
-@@ -0,0 +1,5 @@
+@@ -0,0 +1,12 @@
++( sleep 60
 +if [ -e /etc/persistent/olsrd.conf ]; then
-+        ( sleep 10; olsrd -f /etc/persistent/olsrd.conf -d 0 ) &
++        olsrd -f /etc/persistent/olsrd.conf -d 0
 +elif [ -e /olsrd.conf ]; then
-+        ( sleep 10; olsrd -f /olsrd.conf -d 0 ) &
++        olsrd -f /olsrd.conf -d 0
 +fi
 +insmod ip_tables
 +insmod iptable_filter
 +insmod ip_conntrack
 +insmod ip_nat
 +insmod iptable_nat
++) &
 
 diff -r a15925189329 -r 6686be32be02 files/olsrd.conf
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
