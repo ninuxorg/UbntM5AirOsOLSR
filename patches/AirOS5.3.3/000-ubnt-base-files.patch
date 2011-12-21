@@ -38,7 +38,7 @@ diff -r a15925189329 -r 6686be32be02 files/ninux
 diff -r a15925189329 -r 6686be32be02 files/olsrd.conf
 --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
 +++ b/files/olsrd.conf	Tue Aug 30 23:06:06 2011 +0200
-@@ -0,0 +1,65 @@
+@@ -0,0 +1,57 @@
 +DebugLevel  0
 +IpVersion 4
 +
@@ -89,7 +89,7 @@ diff -r a15925189329 -r 6686be32be02 files/olsrd.conf
 +   HnaValidityTime 125.0
 +}
 +
-+Interface "ath0"
++Interface "ath0" "eth0"
 +{
 +    Mode "mesh"
 +
@@ -97,16 +97,9 @@ diff -r a15925189329 -r 6686be32be02 files/olsrd.conf
 +    # LinkQualityMult default 0.8
 +}
 +
-+Interface "eth0"
-+{
-+    Mode "ether"
-+
-+    # LinkQualityMult 192.168.0.1 0.5
-+    # LinkQualityMult default 0.8
-+}
 --- /dev/null	2011-09-29 23:55:47.065271095 +0200
 +++ b/files/olsrd6.conf	2011-09-23 00:05:29.673685247 +0200
-@@ -0,0 +1,56 @@
+@@ -0,0 +1,50 @@
 +DebugLevel  0
 +IpVersion 6
 +
@@ -135,7 +128,7 @@ diff -r a15925189329 -r 6686be32be02 files/olsrd.conf
 +
 +LoadPlugin "olsrd_txtinfo.so.0.1"
 +{
-+   PlParam     "port"   "2006"
++   PlParam     "port"   "2007"
 +   PlParam     "Accept"   "::"
 +}
 +
@@ -150,16 +143,10 @@ diff -r a15925189329 -r 6686be32be02 files/olsrd.conf
 +   HnaValidityTime 125.0
 +}
 +
-+Interface "ath0"
++Interface "ath0" "eth0"
 +{
 +    Mode "mesh"
 +    
 +    IPv6Multicast FF02::6D
-+
-+}
-+
-+Interface "eth0"
-+{
-+    Mode "ether"
 +
 +}
