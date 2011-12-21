@@ -1,0 +1,48 @@
+diff -Nur SDK.UBNT.v5.3.orig//openwrt/package/ubnt-web/src/lib/link.inc SDK.UBNT.v5.3//openwrt/package/ubnt-web/src/lib/link.inc
+--- SDK.UBNT.v5.3.orig//openwrt/package/ubnt-web/src/lib/link.inc	2011-02-27 20:09:12.000000000 +0100
++++ SDK.UBNT.v5.3//openwrt/package/ubnt-web/src/lib/link.inc	2011-02-27 21:32:29.000000000 +0100
+@@ -976,10 +976,16 @@
+ );
+ 
+ Function cfg_get_ipv4gw $cfg, $iface, $gw (
+-	if (!strlen($gw)) {
+-		$gw = "0.0.0.0";
+-	}
+-	return cfg_get_def($cfg, "route.1.gateway", $gw);
++        $status = "disabled";
++        $status = cfg_get_def($cfg, "route.1.status", $status);
++        if($status == "enabled")
++        {
++                if (!strlen($gw)) {
++                        $gw = "0.0.0.0";
++                }
++                return cfg_get_def($cfg, "route.1.gateway", $gw);
++        }
++        return "";
+ );
+ 
+ Function cfg_get_dns $cfg, $dns, $no (
+diff -Nur SDK.UBNT.v5.3.orig//openwrt/package/ubnt-web/src/lib/netrouterap.tmpl SDK.UBNT.v5.3//openwrt/package/ubnt-web/src/lib/netrouterap.tmpl
+--- SDK.UBNT.v5.3.orig//openwrt/package/ubnt-web/src/lib/netrouterap.tmpl	2011-02-27 20:09:12.000000000 +0100
++++ SDK.UBNT.v5.3//openwrt/package/ubnt-web/src/lib/netrouterap.tmpl	2011-02-27 21:33:41.000000000 +0100
+@@ -152,7 +152,7 @@
+ 	<td colspan="3"><input type="text" class="i_static" style="width: 145px;" name="lanmask" id="lanmask" value="<?echo $lanmask>" req="1" callback="validateWanNetmask" realname="<? echo dict_translate("LAN Netmask"); >"/></td>
+ 	</tr>
+ 	<tr class="static"><td class="f"><? echo dict_translate("Gateway IP:"); ></td>
+-	<td colspan="3"><input type="text" class="i_static" style="width: 145px;" name="wangw" id="wangw" value="<?echo $wangw>" req="1" callback="validateWanIP" realname="<? echo dict_translate("LAN Gateway IP"); >"/></td>
++	<td colspan="3"><input type="text" class="i_static" style="width: 145px;" name="wangw" id="wangw" value="<?echo $wangw>" req="1" callback="validateWlanOptIP" realname="<? echo dict_translate("LAN Gateway IP"); >"/></td>
+ 	</tr>
+ 	<tr class="static"><td class="f"><? echo dict_translate("Primary DNS IP:"); ></td>
+ 	<td colspan="3"><input type="text" class="i_static" style="width: 145px;" name="dns1" id="dns1" value="<?echo $dns1>" req="1" callback="validateWanIP" realname="<? echo dict_translate("Primary DNS IP"); >"/></td>
+diff -Nur SDK.UBNT.v5.3.orig//openwrt/package/ubnt-web/src/lib/netroutersta.tmpl SDK.UBNT.v5.3//openwrt/package/ubnt-web/src/lib/netroutersta.tmpl
+--- SDK.UBNT.v5.3.orig//openwrt/package/ubnt-web/src/lib/netroutersta.tmpl	2011-02-27 20:09:12.000000000 +0100
++++ SDK.UBNT.v5.3//openwrt/package/ubnt-web/src/lib/netroutersta.tmpl	2011-02-27 21:34:27.000000000 +0100
+@@ -111,7 +111,7 @@
+ 	realname="<? if ($netmode == "soho") { echo dict_translate("WAN Netmask"); } else { echo dict_translate("WLAN Netmask"); }>"/></td>
+ 	</tr>
+        <tr class="static"><td class="f"><? echo dict_translate("Gateway IP:"); ></td>
+-	<td colspan="3"><input type="text" style="width: 145px;" class="i_static" name="wangw" id="wangw" value="<?echo $wangw>" req="1" callback="validateWanIP"
++	<td colspan="3"><input type="text" style="width: 145px;" class="i_static" name="wangw" id="wangw" value="<?echo $wangw>" req="1" callback="validateWlanOptIP"
+         realname="<? if ($netmode == "soho") { echo dict_translate("WAN Gateway IP"); } else { echo dict_translate("WLAN Gateway IP"); }>"/></td>
+       </tr>
+        <tr class="static"><td class="f"><? echo dict_translate("Primary DNS IP:"); ></td>
